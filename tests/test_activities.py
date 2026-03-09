@@ -1,6 +1,3 @@
-from src.app import activities
-
-
 def test_root_redirects_to_static_index(client):
     # Arrange
     expected_redirect_path = "/static/index.html"
@@ -70,12 +67,15 @@ def test_signup_for_activity_returns_400_when_activity_is_full(client):
     activity_name = "Chess Club"
     activity_path = "Chess%20Club"
     email = "latecomer@mergington.edu"
-    activity = activities[activity_name]
+    activity = client.get("/activities").json()[activity_name]
     remaining_slots = activity["max_participants"] - len(activity["participants"])
 
-    activity["participants"].extend(
-        [f"student{i}@mergington.edu" for i in range(remaining_slots)]
-    )
+    for index in range(remaining_slots):
+        fill_response = client.post(
+            f"/activities/{activity_path}/signup",
+            params={"email": f"student{index}@mergington.edu"},
+        )
+        assert fill_response.status_code == 200
 
     # Act
     response = client.post(
