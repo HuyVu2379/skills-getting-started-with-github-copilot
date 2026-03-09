@@ -62,6 +62,32 @@ def test_signup_for_activity_returns_400_for_duplicate_student(client):
     assert response.json() == {"detail": "Student already signed up"}
 
 
+def test_signup_for_activity_returns_400_when_activity_is_full(client):
+    # Arrange
+    activity_name = "Chess Club"
+    activity_path = "Chess%20Club"
+    email = "latecomer@mergington.edu"
+    activity = client.get("/activities").json()[activity_name]
+    remaining_slots = activity["max_participants"] - len(activity["participants"])
+
+    for index in range(remaining_slots):
+        fill_response = client.post(
+            f"/activities/{activity_path}/signup",
+            params={"email": f"student{index}@mergington.edu"},
+        )
+        assert fill_response.status_code == 200
+
+    # Act
+    response = client.post(
+        f"/activities/{activity_path}/signup",
+        params={"email": email},
+    )
+
+    # Assert
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Activity is full"}
+
+
 def test_signup_for_activity_returns_404_for_missing_activity(client):
     # Arrange
     missing_activity_path = "Nonexistent%20Club"
